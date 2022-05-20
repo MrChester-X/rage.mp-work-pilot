@@ -1,19 +1,34 @@
-spawnPlanes = [
-    {x: -1441.23095703125, y: -2663.0244140625, z: 0.784507751464844, heading: -119.2569808959961},
-    {x: -1475.501220703125, y: -2727.046142578125, z: 0.749717712402344, heading: -119.88446044921875}
-]
+let spawnsInfo = require("./settings/spawns.json");
 
-var countPos = 1
+let countPos = 1;
 
 function getRandomNumber(start, end) {
     return start + Math.floor(Math.random() * (end - start - 0.01));
+}
+
+function getPositionFromString(line) {
+    line = line.split(" ");
+
+    return new mp.Vector3(parseFloat(line[0]), parseFloat(line[1]), parseFloat(line[2]));
+}
+
+function getRotationFromString(line) {
+    line = line.split(" ");
+
+    return new mp.Vector3(parseFloat(line[3]), parseFloat(line[4]), parseFloat(line[5]));
+}
+
+function getHeadingFromString(line) {
+    line = line.split(" ");
+
+    return parseFloat(line[3]);
 }
 
 mp.events.addCommand("posPlayer", (player) => {
     let pos = player.position;
     let heading = player.heading;
 
-    console.log(`player ${countPos}. {x: ${pos.x}, y: ${pos.y}, z: ${pos.z}, heading: ${heading}}`);
+    console.log(`player ${countPos}. ${pos.x} ${pos.y} ${pos.z} ${heading}`);
 
     countPos++;
 });
@@ -22,27 +37,47 @@ mp.events.addCommand("posVehicle", (player) => {
     let pos = player.vehicle.position;
     let heading = player.vehicle.heading;
 
-    console.log(`vehicle ${countPos}. {x: ${pos.x}, y: ${pos.y}, z: ${pos.z}, heading: ${heading}}`);
+    console.log(`vehicle ${countPos}. ${pos.x} ${pos.y} ${pos.z} ${heading}`);
 
     countPos++;
 });
 
-mp.events.addCommand("spawn", (player) => {
-    let index = getRandomNumber(0, spawnPlanes.length);
-    
-    player.position = spawnPlanes[index];
+mp.events.addCommand("posRotation", (player) => {
+    let pos = player.vehicle.position;
+    let rotation = player.vehicle.rotation;
 
-    let vehicle = mp.vehicles.new(mp.joaat("jet"), spawnPlanes[index], {
-        heading: spawnPlanes[index].heading,
+    console.log(`rotation ${countPos}. ${pos.x} ${pos.y} ${pos.z} ${rotation.x} ${rotation.y} ${rotation.z}`);
+
+    countPos++;
+});
+
+mp.events.addCommand("start", (player, _, vehicleName) => {
+    console.log(spawnsInfo);
+
+    let indexAirport = getRandomNumber(0, spawnsInfo.size - 1);
+
+    player.pilot = {};
+    player.pilot.key_departure = "ls";
+    player.pilot.data_departure = spawnsInfo[player.pilot.key_departure];
+    
+    let spawns = player.pilot.data_departure["spawns"];
+    let indexSpawn = getRandomNumber(0, spawns.length - 1);
+    let spawnData = spawns[indexSpawn];
+
+    let spawnPosition = getPositionFromString(spawnData);
+    let spawnHeading = getHeadingFromString(spawnData);
+
+    player.position = spawnPosition;
+
+    let vehicle = mp.vehicles.new(mp.joaat(vehicleName), spawnPosition, {
+        heading: spawnHeading,
         engine: true
     });
 
     setTimeout(() => {
         player.call("onPlaneEnter", [vehicle]);
 
-        setTimeout(() => {
-            player.putIntoVehicle(vehicle, 0);
-            player.outputChatBox(`Вы успешно сели в самолет ${index}`);
-        }, 200)
+        player.putIntoVehicle(vehicle, 0);
+        player.outputChatBox(`Локация: ${player.pilot.data_departure["name"]}`);
     }, 200);
 })
