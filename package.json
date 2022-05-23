@@ -15,5 +15,9 @@
   "bugs": {
     "url": "https://github.com/MrChester-X/rage.mp-work-pilot/issues"
   },
-  "homepage": "https://github.com/MrChester-X/rage.mp-work-pilot#readme"
+  "homepage": "https://github.com/MrChester-X/rage.mp-work-pilot#readme",
+  "devDependencies": {
+    "@types/ragemp-c": "github:CocaColaBear/types-ragemp-c#master",
+    "@types/ragemp-s": "github:CocaColaBear/types-ragemp-s#master"
+  }
 }
