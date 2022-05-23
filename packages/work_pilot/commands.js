@@ -8,6 +8,7 @@ const STATUS_LANDING = 3;
 const MARKER_DEFAULT = 7;
 const MARKER_SKY = 6;
 
+let countFlight = 1;
 let countPos = 1;
 
 function getRandomNumber(start, end) {
@@ -47,6 +48,14 @@ function setPlayerRandomPoint(player, array, typeMarker) {
     setPlayerPoint(player, point, typeMarker);
 }
 
+function formatPlayerFlightID(player) {
+    return String(player.pilot.id).padStart(4, 0);
+}
+
+function sendDispMessage(player, message) {
+    player.outputChatBox(`!{100, 149, 237}Диспетчер: !{255, 255, 255}${message}`);
+}
+
 mp.events.addCommand("posPlayer", (player) => {
     let pos = player.position;
     let heading = player.heading;
@@ -80,6 +89,9 @@ mp.events.addCommand("start", (player, _, vehicleName) => {
     player.pilot = {};
     player.pilot.active = true;
     player.pilot.status = STATUS_TAKEOFF;
+    player.pilot.id = countFlight;
+
+    countFlight += 1;
 
     let spawnsKeys = Object.keys(spawnsInfo);
     let indexDepartureAirport = getRandomNumber(0, spawnsKeys.length - 1);
@@ -109,10 +121,14 @@ mp.events.addCommand("start", (player, _, vehicleName) => {
     setTimeout(() => {
         player.putIntoVehicle(vehicle, 0);
 
-        player.outputChatBox(`Отправление: ${player.pilot.data_departure["name"]}`);
-        player.outputChatBox(`Прибытие: ${player.pilot.data_arrive["name"]}`);
+        sendDispMessage(player, `Вы назначены пилотом на рейс #${formatPlayerFlightID(player)}`);
+        sendDispMessage(player, `${player.pilot.data_departure["name"]} -> ${player.pilot.data_arrive["name"]}`);
 
-        setPlayerRandomPoint(player, player.pilot.data_departure["departure"], MARKER_SKY);
+        setTimeout(() => {
+            setPlayerRandomPoint(player, player.pilot.data_departure["departure"], MARKER_SKY);
+
+            sendDispMessage(player, `Проследуйте на ВПП и покиньте зону аэропорта`);
+        }, 3000)
     }, 200);
 })
 
@@ -120,11 +136,24 @@ mp.events.add("playerReachPoint", (player) => {
     switch(player.pilot.status) {
         case STATUS_TAKEOFF:
             setPlayerRandomPoint(player, player.pilot.data_arrive["arrive"], MARKER_SKY);
+            player.pilot.status = STATUS_FLIGHT;
+
+            sendDispMessage(player, `Вы покинули зону !{192, 192, 192}${player.pilot.data_departure["name"]}`);
+
+            break;
+        case STATUS_FLIGHT:
+            setPlayerRandomPoint(player, player.pilot.data_arrive["spawns"], MARKER_DEFAULT);
             player.pilot.status = STATUS_LANDING;
+            
+            sendDispMessage(player, `Вы залетели в зону !{192, 192, 192}${player.pilot.data_arrive["name"]}`);
+            sendDispMessage(player, `Проследуйте до указанной точки парковки`);
+
             break;
         case STATUS_LANDING:
-            setPlayerRandomPoint(player, player.pilot.data_arrive["spawns"], MARKER_DEFAULT);
-            player.pilot.status = STATUS_NONE;
+            player.vehicle.destroy();
+
+            sendDispMessage(player, `Вы успешно выполнили рейс #${formatPlayerFlightID(player)}, спасибо за работу!`);
+
             break;
     }
 })
