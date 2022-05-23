@@ -3,7 +3,7 @@ let spawnsInfo = require("./settings/spawns.json");
 let countPos = 1;
 
 function getRandomNumber(start, end) {
-    return start + Math.floor(Math.random() * (end - start - 0.01));
+    return start + Math.floor(Math.random() * (end - start));
 }
 
 function getPositionFromString(line) {
@@ -54,11 +54,14 @@ mp.events.addCommand("posRotation", (player) => {
 mp.events.addCommand("start", (player, _, vehicleName) => {
     console.log(spawnsInfo);
 
-    let indexAirport = getRandomNumber(0, spawnsInfo.size - 1);
+    let spawnsKeys = Object.keys(spawnsInfo);
+    let indexDepartureAirport = getRandomNumber(0, spawnsKeys.length - 1);
 
     player.pilot = {};
-    player.pilot.key_departure = "ls";
+    player.pilot.key_departure = spawnsKeys[indexDepartureAirport];
     player.pilot.data_departure = spawnsInfo[player.pilot.key_departure];
+
+    console.log(indexDepartureAirport, player.pilot.key_departure, spawnsKeys.length);
     
     let spawns = player.pilot.data_departure["spawns"];
     let indexSpawn = getRandomNumber(0, spawns.length - 1);
